@@ -141,6 +141,29 @@ describe ::Contacts::FilterService do
         expect(result[:contacts].length).to be 1
         expect(result[:contacts].first.id).to eq(el_contact.id)
       end
+
+      it 'filter by created_at and custom_attributes' do
+        tomorrow = Date.tomorrow.strftime
+        params[:payload] = [
+          {
+            attribute_key: 'customer_type',
+            filter_operator: 'equal_to',
+            values: ['platinum'],
+            query_operator: 'AND'
+          }.with_indifferent_access,
+          {
+            attribute_key: 'created_at',
+            filter_operator: 'is_less_than',
+            values: ["#{tomorrow}"],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+        result = filter_service.new(params, user_1).perform
+        expected_count = Contact.where("created_at < ? AND custom_attributes->>'customer_type' = ?", Date.tomorrow, 'platinum').count
+
+        expect(result[:contacts].length).to be expected_count
+        expect(result[:contacts].first.id).to eq(el_contact.id)
+      end
     end
   end
 end
